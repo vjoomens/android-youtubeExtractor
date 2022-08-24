@@ -37,9 +37,6 @@ import java.util.regex.Pattern;
 
 public abstract class YouTubeExtractor extends AsyncTask<String, Void, SparseArray<YtFile>> {
 
-    static boolean CACHING = true;
-    static boolean LOGGING = false;
-
     private final static String LOG_TAG = "YouTubeExtractor";
     private final static String CACHE_FILE_NAME = "decipher_js_funct";
 
@@ -241,7 +238,7 @@ public abstract class YouTubeExtractor extends AsyncTask<String, Void, SparseArr
 
                 int itag = format.getInt("itag");
 
-                if (FORMAT_MAP.get(itag) != null) {
+                if (FORMAT_MAP.get(itag) != null && isFormatEnabled(FORMAT_MAP.get(itag))) {
                     if (format.has("url")) {
                         String url = format.getString("url").replace("\\u0026", "&");
                         ytFiles.append(itag, new YtFile(FORMAT_MAP.get(itag), url));
@@ -306,7 +303,7 @@ public abstract class YouTubeExtractor extends AsyncTask<String, Void, SparseArr
 
             String curJsFileName;
 
-            if (CACHING
+            if (isCaching()
                     && (decipherJsFileName == null || decipherFunctions == null || decipherFunctionName == null)) {
                 readDecipherFunctFromCache();
             }
@@ -323,7 +320,7 @@ public abstract class YouTubeExtractor extends AsyncTask<String, Void, SparseArr
                 decipherJsFileName = curJsFileName;
             }
 
-            if (LOGGING)
+            if (isLogging())
                 Log.d(LOG_TAG, "Decipher signatures: " + encSignatures.size() + ", videos: " + ytFiles.size());
 
             String signature;
@@ -353,12 +350,24 @@ public abstract class YouTubeExtractor extends AsyncTask<String, Void, SparseArr
         }
 
         if (ytFiles.size() == 0) {
-            if (LOGGING)
+            if (isLogging())
                 Log.d(LOG_TAG, pageHtml);
             return null;
         }
 
         return ytFiles;
+    }
+
+    private boolean isFormatEnabled(Format itag) {
+        return true;
+    }
+
+    public boolean isLogging() {
+        return false;
+    }
+
+    public boolean isCaching() {
+        return true;
     }
 
     private boolean decipherSignature(final SparseArray<String> encSignatures) throws IOException {
@@ -386,12 +395,12 @@ public abstract class YouTubeExtractor extends AsyncTask<String, Void, SparseArr
                 urlConnection.disconnect();
             }
 
-            if (LOGGING)
+            if (isLogging())
                 Log.d(LOG_TAG, "Decipher FunctURL: " + decipherFunctUrl);
             Matcher mat = patSignatureDecFunction.matcher(javascriptFile);
             if (mat.find()) {
                 decipherFunctionName = mat.group(1);
-                if (LOGGING)
+                if (isLogging())
                     Log.d(LOG_TAG, "Decipher Functname: " + decipherFunctionName);
 
                 Pattern patMainVariable = Pattern.compile("(var |\\s|,|;)" + decipherFunctionName.replace("$", "\\$") +
@@ -465,10 +474,10 @@ public abstract class YouTubeExtractor extends AsyncTask<String, Void, SparseArr
                     }
                 }
 
-                if (LOGGING)
+                if (isLogging())
                     Log.d(LOG_TAG, "Decipher Function: " + decipherFunctions);
                 decipherViaWebView(encSignatures);
-                if (CACHING) {
+                if (isLogging()) {
                     writeDeciperFunctToChache();
                 }
             } else {
@@ -582,7 +591,7 @@ public abstract class YouTubeExtractor extends AsyncTask<String, Void, SparseArr
                     public void onError(String errorMessage) {
                         lock.lock();
                         try {
-                            if (LOGGING)
+                            if (isLogging())
                                 Log.e(LOG_TAG, errorMessage);
                             jsExecuting.signal();
                         } finally {
