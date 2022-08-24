@@ -358,7 +358,7 @@ public abstract class YouTubeExtractor extends AsyncTask<String, Void, SparseArr
         return ytFiles;
     }
 
-    private boolean isFormatEnabled(Format itag) {
+    public boolean isFormatEnabled(Format format) {
         return true;
     }
 
